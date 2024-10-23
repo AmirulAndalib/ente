@@ -20,6 +20,12 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'be';
 
+  static String m0(passwordStrengthValue) =>
+      "Надзейнасць пароля: ${passwordStrengthValue}";
+
+  static String m1(email) =>
+      "Ліст адпраўлены на электронную пошту <green>${email}</green>";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "accountWelcomeBack":
@@ -29,6 +35,10 @@ class MessageLookup extends MessageLookupByLibrary {
         "askDeleteReason": MessageLookupByLibrary.simpleMessage(
             "Якая асноўная прычына выдалення вашага ўліковага запісу?"),
         "cancel": MessageLookupByLibrary.simpleMessage("Скасаваць"),
+        "changePasswordTitle":
+            MessageLookupByLibrary.simpleMessage("Змяніць пароль"),
+        "checkInboxAndSpamFolder": MessageLookupByLibrary.simpleMessage(
+            "Праверце свае ўваходныя лісты (і спам) для завяршэння праверкі"),
         "confirmAccountDeletion": MessageLookupByLibrary.simpleMessage(
             "Пацвердзіць выдаленне ўліковага запісу"),
         "confirmDeletePrompt": MessageLookupByLibrary.simpleMessage(
@@ -59,8 +69,14 @@ class MessageLookup extends MessageLookupByLibrary {
         "deleteRequestSLAText": MessageLookupByLibrary.simpleMessage(
             "Ваш запыт будзе апрацаваны цягам 72 гадзін."),
         "email": MessageLookupByLibrary.simpleMessage("Электронная пошта"),
+        "encryptionKeys":
+            MessageLookupByLibrary.simpleMessage("Ключы шыфравання"),
         "entePhotosPerm": MessageLookupByLibrary.simpleMessage(
             "Праграме <i>неабходны доступ</i> для захавання вашых фатаграфій"),
+        "enterNewPasswordToEncrypt": MessageLookupByLibrary.simpleMessage(
+            "Увядзіце новы пароль, каб мы маглі выкарыстаць яго для расшыфроўкі вашых даных"),
+        "enterPasswordToEncrypt": MessageLookupByLibrary.simpleMessage(
+            "Увядзіце пароль, каб мы маглі выкарыстаць яго для расшыфроўкі вашых даных"),
         "enterValidEmail": MessageLookupByLibrary.simpleMessage(
             "Увядзіце сапраўдны адрас электронная пошты."),
         "enterYourEmailAddress": MessageLookupByLibrary.simpleMessage(
@@ -78,6 +94,7 @@ class MessageLookup extends MessageLookupByLibrary {
             "Памылковы адрас электроннай пошты"),
         "kindlyHelpUsWithThisInformation": MessageLookupByLibrary.simpleMessage(
             "Калі ласка, дапамажыце нам з гэтай інфармацыяй"),
+        "moderateStrength": MessageLookupByLibrary.simpleMessage("Умераны"),
         "noRecoveryKey":
             MessageLookupByLibrary.simpleMessage("Няма ключа аднаўлення?"),
         "noRecoveryKeyNoDecryption": MessageLookupByLibrary.simpleMessage(
@@ -85,16 +102,30 @@ class MessageLookup extends MessageLookupByLibrary {
         "ok": MessageLookupByLibrary.simpleMessage("Добра"),
         "oops": MessageLookupByLibrary.simpleMessage("Вой"),
         "password": MessageLookupByLibrary.simpleMessage("Пароль"),
+        "passwordChangedSuccessfully":
+            MessageLookupByLibrary.simpleMessage("Пароль паспяхова зменены"),
+        "passwordStrength": m0,
+        "passwordWarning": MessageLookupByLibrary.simpleMessage(
+            "Мы не захоўваем гэты пароль і <underline>мы не зможам расшыфраваць вашы даныя</underline>, калі вы забудзеце яго"),
         "recoverButton": MessageLookupByLibrary.simpleMessage("Аднавіць"),
         "recoverySuccessful":
             MessageLookupByLibrary.simpleMessage("Паспяховае аднаўленне!"),
+        "resendEmail":
+            MessageLookupByLibrary.simpleMessage("Адправіць ліст яшчэ раз"),
+        "resetPasswordTitle":
+            MessageLookupByLibrary.simpleMessage("Скінуць пароль"),
         "selectReason":
             MessageLookupByLibrary.simpleMessage("Выберыце прычыну"),
         "sendEmail": MessageLookupByLibrary.simpleMessage("Адправіць ліст"),
+        "setPasswordTitle":
+            MessageLookupByLibrary.simpleMessage("Задаць пароль"),
         "somethingWentWrongPleaseTryAgain":
             MessageLookupByLibrary.simpleMessage(
                 "Нешта пайшло не так. Паспрабуйце яшчэ раз"),
         "sorry": MessageLookupByLibrary.simpleMessage("Прабачце"),
+        "strongStrength": MessageLookupByLibrary.simpleMessage("Надзейны"),
+        "tapToEnterCode":
+            MessageLookupByLibrary.simpleMessage("Націсніце, каб увесці код"),
         "terminate": MessageLookupByLibrary.simpleMessage("Перарваць"),
         "terminateSession":
             MessageLookupByLibrary.simpleMessage("Перарваць сеанс?"),
@@ -109,6 +140,8 @@ class MessageLookup extends MessageLookupByLibrary {
         "verify": MessageLookupByLibrary.simpleMessage("Праверыць"),
         "verifyEmail":
             MessageLookupByLibrary.simpleMessage("Праверыць электронную пошту"),
+        "weHaveSendEmailTo": m1,
+        "weakStrength": MessageLookupByLibrary.simpleMessage("Ненадзейны"),
         "yourAccountHasBeenDeleted": MessageLookupByLibrary.simpleMessage(
             "Ваш уліковы запіс быў выдалены")
       };

@@ -1343,5 +1343,14 @@
   "mostRecent": "Mais recente",
   "mostRelevant": "Mais relevante",
   "loadingYourPhotos": "Carregando suas fotos...",
-  "processingImport": "Processando {folderName}..."
+  "processingImport": "Processando {folderName}...",
+  "personName": "Nome da pessoa",
+  "addNewPerson": "Adicionar nova pessoa",
+  "addNameOrMerge": "Adicionar nome ou juntar",
+  "mergeWithExisting": "Juntar com o existente",
+  "newPerson": "Nova pessoa",
+  "addName": "Adicionar pessoa",
+  "add": "Adicionar",
+  "extraPhotosFoundFor": "Fotos adicionais encontradas para $text",
+  "extraPhotosFound": "Fotos adicionais encontradas"
 }

@@ -13,8 +13,11 @@ import { useIsSmallWidth } from "@/base/hooks";
 import { pt } from "@/base/i18n";
 import log from "@/base/log";
 import {
+    addCGroup,
+    addClusterToCGroup,
     applyPersonSuggestionUpdates,
     deleteCGroup,
+    ignoreCluster,
     renameCGroup,
     suggestionsAndChoicesForPerson,
 } from "@/new/photos/services/ml";
@@ -26,12 +29,14 @@ import {
     type PersonSuggestionUpdates,
     type PreviewableCluster,
 } from "@/new/photos/services/ml/people";
+import { ensure } from "@/utils/ensure";
 import OverflowMenu from "@ente/shared/components/OverflowMenu/menu";
 import { OverflowMenuOption } from "@ente/shared/components/OverflowMenu/option";
 import AddIcon from "@mui/icons-material/Add";
 import CheckIcon from "@mui/icons-material/Check";
 import ClearIcon from "@mui/icons-material/Clear";
 import EditIcon from "@mui/icons-material/Edit";
+import HideImageOutlinedIcon from "@mui/icons-material/HideImageOutlined";
 import ListAltOutlinedIcon from "@mui/icons-material/ListAltOutlined";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import RestoreIcon from "@mui/icons-material/Restore";
@@ -44,42 +49,30 @@ import {
     List,
     ListItem,
     Stack,
+    styled,
     ToggleButton,
     ToggleButtonGroup,
     Tooltip,
     Typography,
+    useMediaQuery,
 } from "@mui/material";
 import { t } from "i18next";
 import React, { useEffect, useReducer, useState } from "react";
-import { isInternalUser } from "../../services/feature-flags";
+import type { FaceCluster } from "../../services/ml/cluster";
 import { useAppContext } from "../../types/context";
-import { AddPersonDialog } from "../AddPersonDialog";
-import { SpaceBetweenFlex } from "../mui";
+import { SpaceBetweenFlex, type ButtonishProps } from "../mui";
+import { DialogCloseIconButton } from "../mui/Dialog";
 import { SuggestionFaceList } from "../PeopleList";
 import { SingleInputDialog } from "../SingleInputForm";
+import {
+    ItemCard,
+    LargeTileButton,
+    LargeTilePlusOverlay,
+    LargeTileTextOverlay,
+} from "../Tiles";
+import { useWrapAsyncOperation } from "../utils/use-wrap-async";
 import type { GalleryBarImplProps } from "./BarImpl";
 import { GalleryItemsHeaderAdapter, GalleryItemsSummary } from "./ListHeader";
-
-/**
- * Derived UI state backing the gallery when it is in "people" mode.
- *
- * This may be different from the actual underlying state since there might be
- * unsynced data (hidden or deleted that have not yet been synced with remote)
- * that should be taken into account for the UI state.
- */
-export interface GalleryPeopleState {
-    /**
-     * The currently selected person, if any.
-     *
-     * Whenever this is present, it is guaranteed to be one of the items from
-     * within {@link people}.
-     */
-    activePerson: Person | undefined;
-    /**
-     * The list of people to show.
-     */
-    people: Person[];
-}
 
 type PeopleHeaderProps = Pick<
     GalleryBarImplProps,
@@ -120,16 +113,11 @@ const CGroupPersonHeader: React.FC<CGroupPersonHeaderProps> = ({
     const cgroup = person.cgroup;
 
     const { showMiniDialog } = useAppContext();
-    const [showReviewOption, setShowReviewOption] = useState(false);
 
     const { show: showNameInput, props: nameInputVisibilityProps } =
         useModalVisibility();
     const { show: showSuggestions, props: suggestionsVisibilityProps } =
         useModalVisibility();
-
-    useEffect(() => {
-        void isInternalUser().then((b) => setShowReviewOption(b));
-    }, []);
 
     const handleRename = (name: string) => renameCGroup(cgroup, name);
 
@@ -151,7 +139,8 @@ const CGroupPersonHeader: React.FC<CGroupPersonHeaderProps> = ({
         });
 
     // While technically it is possible for the cgroup not to have a name, logic
-    // wise we shouldn't be ending up here without a name.
+    // wise we shouldn't be ending up here without a name (this state is
+    // expected to be reached only for named persons).
     const name = cgroup.data.name ?? "";
 
     return (
@@ -164,6 +153,13 @@ const CGroupPersonHeader: React.FC<CGroupPersonHeaderProps> = ({
                 ariaControls={"person-options"}
                 triggerButtonIcon={<MoreHorizIcon />}
             >
+                <OverflowMenuOption
+                    startIcon={<ListAltOutlinedIcon />}
+                    centerAlign
+                    onClick={showSuggestions}
+                >
+                    {pt("Review suggestions")}
+                </OverflowMenuOption>
                 <OverflowMenuOption
                     startIcon={<EditIcon />}
                     centerAlign
@@ -178,15 +174,6 @@ const CGroupPersonHeader: React.FC<CGroupPersonHeaderProps> = ({
                 >
                     {pt("Reset")}
                 </OverflowMenuOption>
-                {showReviewOption /* TODO-Cluster */ && (
-                    <OverflowMenuOption
-                        startIcon={<ListAltOutlinedIcon />}
-                        centerAlign
-                        onClick={showSuggestions}
-                    >
-                        {pt("Review suggestions")}
-                    </OverflowMenuOption>
-                )}
             </OverflowMenu>
 
             <SingleInputDialog
@@ -203,7 +190,6 @@ const CGroupPersonHeader: React.FC<CGroupPersonHeaderProps> = ({
                 submitButtonTitle={t("rename")}
                 onSubmit={handleRename}
             />
-
             <SuggestionsDialog
                 {...suggestionsVisibilityProps}
                 {...{ person }}
@@ -222,8 +208,23 @@ const ClusterPersonHeader: React.FC<ClusterPersonHeaderProps> = ({
 }) => {
     const cluster = person.cluster;
 
+    const { showMiniDialog } = useAppContext();
+
     const { show: showAddPerson, props: addPersonVisibilityProps } =
         useModalVisibility();
+
+    const confirmIgnore = () =>
+        showMiniDialog({
+            title: pt("Ignore person?"),
+            message: pt(
+                "This face grouping will not be shown in the people list",
+            ),
+            continue: {
+                text: pt("Ignore"),
+                color: "primary",
+                action: () => ignoreCluster(cluster),
+            },
+        });
 
     return (
         <>
@@ -251,6 +252,13 @@ const ClusterPersonHeader: React.FC<ClusterPersonHeaderProps> = ({
                     >
                         {pt("Add a name")}
                     </OverflowMenuOption>
+                    <OverflowMenuOption
+                        startIcon={<HideImageOutlinedIcon />}
+                        centerAlign
+                        onClick={confirmIgnore}
+                    >
+                        {pt("Ignore")}
+                    </OverflowMenuOption>
                 </OverflowMenu>
             </Stack>
 
@@ -261,6 +269,141 @@ const ClusterPersonHeader: React.FC<ClusterPersonHeaderProps> = ({
         </>
     );
 };
+
+type AddPersonDialogProps = ModalVisibilityProps & {
+    /**
+     * The list of people from show the existing named people.
+     */
+    people: Person[];
+    /**
+     * The cluster to add to the selected person (existing or new).
+     */
+    cluster: FaceCluster;
+};
+
+/**
+ * A dialog allowing the user to select one of the existing named persons they
+ * have, or create a new one, and then associate the provided cluster to it,
+ * creating or updating a remote "person".
+ */
+const AddPersonDialog: React.FC<AddPersonDialogProps> = ({
+    open,
+    onClose,
+    people,
+    cluster,
+}) => {
+    const isFullScreen = useMediaQuery("(max-width: 490px)");
+
+    const [openNameInput, setOpenNameInput] = useState(false);
+
+    const cgroupPeople: CGroupPerson[] = people.filter(
+        (p) => p.type != "cluster",
+    );
+
+    const handleAddPerson = () => setOpenNameInput(true);
+
+    const handleSelectPerson = useWrapAsyncOperation((id: string) =>
+        addClusterToCGroup(
+            ensure(cgroupPeople.find((p) => p.id == id)).cgroup,
+            cluster,
+        ),
+    );
+
+    const handleAddPersonWithName = (name: string) => addCGroup(name, cluster);
+
+    // [Note: Calling setState during rendering]
+    //
+    // Calling setState during rendering should be avoided when there are
+    // cleaner alternatives, but it is not completely verboten, and it has
+    // documented semantics:
+    //
+    // > React will discard the currently rendering component's output and
+    // > immediately attempt to render it again with the new state.
+    // >
+    // > https://react.dev/reference/react/useState
+
+    // If we're opened without any existing people that can be selected, jump
+    // directly to the add person dialog.
+    if (open && !openNameInput && !cgroupPeople.length) {
+        onClose();
+        setOpenNameInput(true);
+        return <></>;
+    }
+
+    return (
+        <>
+            <Dialog
+                {...{ open, onClose }}
+                fullWidth
+                fullScreen={isFullScreen}
+                PaperProps={{ sx: { maxWidth: "490px" } }}
+            >
+                <SpaceBetweenFlex sx={{ padding: "10px 8px 6px 0" }}>
+                    <DialogTitle variant="h3" fontWeight={"bold"}>
+                        {pt("Add name")}
+                    </DialogTitle>
+                    <DialogCloseIconButton {...{ onClose }} />
+                </SpaceBetweenFlex>
+                <DialogContent_>
+                    <AddPerson onClick={handleAddPerson} />
+                    {cgroupPeople.map((person) => (
+                        <PersonButton
+                            key={person.id}
+                            person={person}
+                            onPersonClick={handleSelectPerson}
+                        />
+                    ))}
+                </DialogContent_>
+            </Dialog>
+
+            <SingleInputDialog
+                open={openNameInput}
+                onClose={() => setOpenNameInput(false)}
+                title={pt("New person") /* TODO-Cluster */}
+                label={pt("Add name")}
+                placeholder={t("enter_name")}
+                autoComplete="name"
+                autoFocus
+                submitButtonTitle={t("add")}
+                onSubmit={handleAddPersonWithName}
+            />
+        </>
+    );
+};
+
+const DialogContent_ = styled(DialogContent)`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+`;
+
+interface PersonButtonProps {
+    person: Person;
+    onPersonClick: (personID: string) => void;
+}
+
+const PersonButton: React.FC<PersonButtonProps> = ({
+    person,
+    onPersonClick,
+}) => (
+    <ItemCard
+        TileComponent={LargeTileButton}
+        coverFile={person.displayFaceFile}
+        coverFaceID={person.displayFaceID}
+        onClick={() => onPersonClick(person.id)}
+    >
+        <LargeTileTextOverlay>
+            <Typography>{person.name ?? ""}</Typography>
+        </LargeTileTextOverlay>
+    </ItemCard>
+);
+
+const AddPerson: React.FC<ButtonishProps> = ({ onClick }) => (
+    <ItemCard TileComponent={LargeTileButton} onClick={onClick}>
+        <LargeTileTextOverlay>{pt("New person")}</LargeTileTextOverlay>
+        <LargeTilePlusOverlay>+</LargeTilePlusOverlay>
+    </ItemCard>
+);
 
 type SuggestionsDialogProps = ModalVisibilityProps & {
     person: CGroupPerson;
@@ -319,10 +462,10 @@ const initialSuggestionsDialogState: SuggestionsDialogState = {
     updates: new Map(),
 };
 
-const suggestionsDialogReducer = (
-    state: SuggestionsDialogState,
-    action: SuggestionsDialogAction,
-): SuggestionsDialogState => {
+const suggestionsDialogReducer: React.Reducer<
+    SuggestionsDialogState,
+    SuggestionsDialogAction
+> = (state, action) => {
     switch (action.type) {
         case "fetch":
             return {
