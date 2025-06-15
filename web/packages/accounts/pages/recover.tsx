@@ -3,23 +3,24 @@ import {
     AccountsPageFooter,
     AccountsPageTitle,
 } from "ente-accounts/components/layouts/centered-paper";
-import { recoveryKeyB64FromMnemonic } from "ente-accounts/services/recovery-key";
+import { recoveryKeyFromMnemonic } from "ente-accounts/services/recovery-key";
 import { appHomeRoute, stashRedirect } from "ente-accounts/services/redirect";
+import type { KeyAttributes, User } from "ente-accounts/services/user";
 import { sendOTT } from "ente-accounts/services/user";
+import { decryptAndStoreToken } from "ente-accounts/utils/helpers";
 import { LinkButton } from "ente-base/components/LinkButton";
-import { useBaseContext } from "ente-base/context";
-import { decryptBoxB64 } from "ente-base/crypto";
-import log from "ente-base/log";
-import SingleInputForm, {
-    type SingleInputFormProps,
-} from "ente-shared/components/SingleInputForm";
 import {
-    decryptAndStoreToken,
-    saveKeyInSessionStore,
-} from "ente-shared/crypto/helpers";
+    SingleInputForm,
+    type SingleInputFormProps,
+} from "ente-base/components/SingleInputForm";
+import { useBaseContext } from "ente-base/context";
+import { decryptBox } from "ente-base/crypto";
+import log from "ente-base/log";
+import {
+    haveCredentialsInSession,
+    saveMasterKeyInSessionAndSafeStore,
+} from "ente-base/session";
 import { getData, setData } from "ente-shared/storage/localStorage";
-import { getKey } from "ente-shared/storage/sessionStorage";
-import type { KeyAttributes, User } from "ente-shared/user/types";
 import { t } from "i18next";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
@@ -36,7 +37,6 @@ const Page: React.FC = () => {
     useEffect(() => {
         const user: User = getData("user");
         const keyAttributes: KeyAttributes = getData("keyAttributes");
-        const key = getKey("encryptionKey");
         if (!user?.email) {
             void router.push("/");
             return;
@@ -49,27 +49,27 @@ const Page: React.FC = () => {
         }
         if (!keyAttributes) {
             void router.push("/generate");
-        } else if (key) {
+        } else if (haveCredentialsInSession()) {
             void router.push(appHomeRoute);
         } else {
             setKeyAttributes(keyAttributes);
         }
     }, [router]);
 
-    const recover: SingleInputFormProps["callback"] = async (
-        recoveryKey: string,
+    const handleSubmit: SingleInputFormProps["onSubmit"] = async (
+        recoveryKeyMnemonic: string,
         setFieldError,
     ) => {
         try {
             const keyAttr = keyAttributes!;
-            const masterKey = await decryptBoxB64(
+            const masterKey = await decryptBox(
                 {
                     encryptedData: keyAttr.masterKeyEncryptedWithRecoveryKey!,
                     nonce: keyAttr.masterKeyDecryptionNonce!,
                 },
-                await recoveryKeyB64FromMnemonic(recoveryKey),
+                await recoveryKeyFromMnemonic(recoveryKeyMnemonic),
             );
-            await saveKeyInSessionStore("encryptionKey", masterKey);
+            await saveMasterKeyInSessionAndSafeStore(masterKey);
             await decryptAndStoreToken(keyAttr, masterKey);
 
             setData("showBackButton", { value: false });
@@ -92,11 +92,10 @@ const Page: React.FC = () => {
         <AccountsPageContents>
             <AccountsPageTitle>{t("recover_account")}</AccountsPageTitle>
             <SingleInputForm
-                callback={recover}
-                fieldType="text"
-                placeholder={t("recovery_key")}
-                buttonText={t("recover")}
-                disableAutoComplete
+                autoComplete="off"
+                label={t("recovery_key")}
+                submitButtonTitle={t("recover")}
+                onSubmit={handleSubmit}
             />
             <AccountsPageFooter>
                 <LinkButton onClick={showNoRecoveryKeyMessage}>

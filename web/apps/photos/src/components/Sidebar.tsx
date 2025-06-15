@@ -31,13 +31,13 @@ import { LinkButton } from "ente-base/components/LinkButton";
 import {
     RowButton,
     RowButtonDivider,
+    RowButtonEndActivityIndicator,
     RowButtonGroup,
     RowButtonGroupHint,
     RowButtonGroupTitle,
     RowSwitch,
 } from "ente-base/components/RowButton";
 import { SpacedRow } from "ente-base/components/containers";
-import { ActivityIndicator } from "ente-base/components/mui/ActivityIndicator";
 import { DialogCloseIconButton } from "ente-base/components/mui/DialogCloseIconButton";
 import { FocusVisibleButton } from "ente-base/components/mui/FocusVisibleButton";
 import {
@@ -581,7 +581,7 @@ const UtilitySection: React.FC<UtilitySectionProps> = ({
                 label={t("export_data")}
                 endIcon={
                     exportService.isExportInProgress() && (
-                        <ActivityIndicator size="20px" />
+                        <RowButtonEndActivityIndicator />
                     )
                 }
                 onClick={handleExport}
@@ -694,7 +694,7 @@ const Account: React.FC<AccountProps> = ({
             onRootClose={handleRootClose}
             title={t("account")}
         >
-            <Stack sx={{ px: "16px", py: "8px", gap: "24px" }}>
+            <Stack sx={{ px: 2, py: 1, gap: 3 }}>
                 <RowButtonGroup>
                     <RowButton
                         endIcon={
@@ -781,7 +781,7 @@ const Preferences: React.FC<NestedSidebarDrawerVisibilityProps> = ({
             onRootClose={handleRootClose}
             title={t("preferences")}
         >
-            <Stack sx={{ px: "16px", py: "8px", gap: "24px" }}>
+            <Stack sx={{ px: 2, py: 1, gap: 3 }}>
                 <LanguageSelector />
                 <ThemeSelector />
                 <Divider sx={{ my: "2px", opacity: 0.1 }} />
@@ -970,7 +970,7 @@ const MapSettings: React.FC<NestedSidebarDrawerVisibilityProps> = ({
             onRootClose={handleRootClose}
             title={t("map")}
         >
-            <Stack sx={{ px: "16px", py: "20px" }}>
+            <Stack sx={{ px: 2, py: "20px" }}>
                 <RowButtonGroup>
                     <RowSwitch
                         label={t("enabled")}
@@ -1021,7 +1021,7 @@ const AdvancedSettings: React.FC<NestedSidebarDrawerVisibilityProps> = ({
             onRootClose={handleRootClose}
             title={t("advanced")}
         >
-            <Stack sx={{ px: "16px", py: "20px", gap: "24px" }}>
+            <Stack sx={{ px: 2, py: "20px", gap: 3 }}>
                 <Stack>
                     <RowButtonGroup>
                         <RowSwitch
@@ -1089,7 +1089,7 @@ const Help: React.FC<NestedSidebarDrawerVisibilityProps> = ({
             onRootClose={handleRootClose}
             title={t("help")}
         >
-            <Stack sx={{ px: "16px", py: "8px", gap: "24px" }}>
+            <Stack sx={{ px: 2, py: 1, gap: 3 }}>
                 <RowButtonGroup>
                     <RowButton
                         endIcon={<InfoOutlinedIcon />}
