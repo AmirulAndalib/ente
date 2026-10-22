@@ -18,6 +18,6 @@
         "@types/react-dom": "19.2.3",
         "@vitejs/plugin-react": "5.2.0",
         "ente-build-config": "*",
-        "vite": "8.1.0"
+        "vite": "8.3.5"
     }
 }
