@@ -60,7 +60,7 @@
         "base-x": "5.0.1"
     },
     "devDependencies": {
-        "concurrently": "10.0.4",
+        "concurrently": "10.0.6",
         "eslint": "10.4.1",
         "knip": "6.31.0",
         "prettier": "3.8.3",
