@@ -14,11 +14,11 @@
         "ente-base": "*",
         "ente-utils": "*",
         "react": "19.2.7",
-        "zod": "4.4.3"
+        "zod": "4.6.7"
     },
     "devDependencies": {
         "@types/react": "19.2.17",
         "ente-build-config": "*",
-        "vitest": "4.1.11"
+        "vitest": "4.1.12"
     }
 }
